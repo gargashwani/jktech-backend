@@ -1,0 +1,26 @@
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Data
+storage/app/*
+!storage/app/.gitignore
+public/storage/*
+!public/storage/.gitignore
+alembic/versions/*
+!alembic/versions/__init__.py
+
+# Git
+.git
+.github

@@ -1,0 +1,275 @@
+{
+  "personalInfo": {
+    "fullName": "Ashwani Garg",
+    "email": "ashwanigarg@outlook.in",
+    "phone": "+91-96600-25446",
+    "location": "Noida",
+    "linkedin": "linkedin.com/in/ashwanigargg",
+    "title": "Technical Lead",
+    "summary": "Technical Lead and Software Solution Engineer with 12+ years of experience leading teams and architecting scalable SaaS platforms, CRMs, ERPs, and web applications.\n\nExpert in PHP (Laravel), JavaScript (Vue.js, React.js, Electron.js), Python (FastAPI), and mobile development (Flutter).\n\nStrong experience leveraging AI-assisted engineering tools to accelerate requirement analysis, improve code quality, and optimize delivery workflows.\n\nProven leader in mentoring teams, driving DevOps practices, and aligning engineering execution with business and product goals."
+  },
+  "experiences": [
+    {
+      "id": "1",
+      "company": "ValueCoders (Vinove)",
+      "position": "Technical Lead",
+      "startDate": "May 2023",
+      "endDate": "Dec 2025",
+      "current": true,
+      "description": "Lead team of developers, providing support to 20+ developers and Program Managers, collaborating with Product Owners and CXO for the product growth."
+    },
+    {
+      "id": "2",
+      "company": "ValueCoders (Vinove)",
+      "position": "Sr Software Developer",
+      "startDate": "Nov 2021",
+      "endDate": "May 2023",
+      "current": false,
+      "description": "Laravel and VueJS Expert, worked as Team Lead guiding on different aspects including functionality, development, testing and cloud hosting."
+    },
+    {
+      "id": "3",
+      "company": "Contract Work",
+      "position": "Freelance Developer",
+      "startDate": "June 2018",
+      "endDate": "August 2020",
+      "current": false,
+      "description": "Worked on contract basis on various projects from designing and planning to completion of projects."
+    },
+    {
+      "id": "4",
+      "company": "Codesoftic Tech Pvt Ltd",
+      "position": "Web Developer",
+      "startDate": "Feb 2017",
+      "endDate": "May 2018",
+      "current": false,
+      "description": "PHP and CodeIgniter developer, also developed websites using WordPress themes and plugins."
+    },
+    {
+      "id": "5",
+      "company": "Unnati Web Services Pvt Ltd",
+      "position": "Web Developer",
+      "startDate": "August 2013",
+      "endDate": "Jan 2017",
+      "current": false,
+      "description": "Started as trainee learning HTML, CSS, PHP MySQL and gradually became a successful Web Developer."
+    }
+  ],
+  "education": [
+    {
+      "id": "1758429617954",
+      "institution": "Manipal University Jaipur",
+      "degree": "BCA",
+      "field": "Bachelor of Computer Applications (Pursuing)",
+      "graduationDate": "2025-2028"
+    },
+    {
+      "id": "2",
+      "institution": "CBSE",
+      "degree": "Senior Secondary Education",
+      "field": "Non-Medical",
+      "graduationDate": "2009"
+    },
+    {
+      "id": "1768630075214",
+      "institution": "Lovely Professional University",
+      "degree": "BTech",
+      "field": "Electronics and Communication Engineering",
+      "graduationDate": "2009-13 (Last semester pending)"
+    }
+  ],
+  "skillCategories": [
+    {
+      "id": "1758431257307",
+      "name": "AI-driven leadership",
+      "skills": [
+        {
+          "id": "1758431265793",
+          "name": "Led development of the internal SaaS product Workstatus, coordinating cross-functional teams across Flutter, ElectronJS, and Python.",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766569752382",
+          "name": "Leveraged AI-assisted development tools (Cursor, Copilot, Claude/GPT) to accelerate requirement analysis, improve code quality, and streamline development workflows.",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766569752766",
+          "name": "Reduced repetitive manual effort by approximately 20–30%, improving delivery efficiency while maintaining engineering quality and stability.",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766569753099",
+          "name": "Mentored developers through code reviews, sprint planning, and technical decision-making, ensuring alignment with product vision and scalable architecture.",
+          "level": "",
+          "years": ""
+        }
+      ]
+    },
+    {
+      "id": "cat1",
+      "name": "Technical Skills",
+      "skills": [
+        {
+          "id": "5",
+          "name": "Backend: Python (FastAPI), PHP (Laravel), Node.js (Express)",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570310035",
+          "name": "Frontend: Vue.js, React.js, Electron.js",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570319501",
+          "name": "Mobile: Flutter",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570331652",
+          "name": "Databases: MySQL, MongoDB, Redis, Postgres",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570338551",
+          "name": "DevOps: Docker, Jenkins, GitHub Actions, Nginx, Apache, Linux",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570355017",
+          "name": "Security & Auth: Google SSO, SAML 2.0, Okta, Azure AD",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "1766570355201",
+          "name": "AI Tooling: Cursor, GitHub Copilot, Claude, GPT, Gemini, OpenAI,  Ollama, HuggingFace",
+          "level": "",
+          "years": ""
+        }
+      ]
+    },
+    {
+      "id": "cat2",
+      "name": "DevOps / Security Skills",
+      "skills": [
+        {
+          "id": "8",
+          "name": "Google SSO & SAML 2.0 Integration, Okta, Azure, MDM",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "10",
+          "name": "Docker, Jenkins, GitHub Actions",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "11",
+          "name": "SonarQube, Cloudflare (SSL, DNS, CDN)",
+          "level": "",
+          "years": ""
+        },
+        {
+          "id": "12",
+          "name": "Nginx, Apache, SSH",
+          "level": "",
+          "years": ""
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "1748969889516",
+      "name": "Workstatus (SAAS)",
+      "description": "Track time, manage projects, allocate resources, monitor productivity, and simplify attendance",
+      "link": "https://workstatus.io/",
+      "skills": [
+        "Laravel",
+        "Python",
+        "VueJS",
+        "MySQL",
+        "Redis",
+        "Flutter",
+        "ElectronJS"
+      ]
+    },
+    {
+      "id": "1766570519900",
+      "name": "TrueDhan",
+      "description": "Investment Tracking Web App",
+      "link": "https://truedhan.com/",
+      "skills": [
+        "FastAPI",
+        "Postgres",
+        "ReactJS",
+        "Redis",
+        "Nginx"
+      ]
+    },
+    {
+      "id": "1762049156331",
+      "name": "Codesips",
+      "description": "Full-stack blog platform built with Next.js, TypeScript, and Prisma featuring admin CMS, newsletter system, social commenting, and AI integration.",
+      "link": "https://codesips.com/",
+      "skills": [
+        "AI-Assisted Development",
+        "TypeScript",
+        "Next.js",
+        "Git",
+        "Prisma"
+      ]
+    },
+    {
+      "id": "1748970268979",
+      "name": "ExpressFold (Open Source)",
+      "description": "An express based MVC Framework",
+      "link": "https://github.com/gargashwani/expressfold-scaffolding",
+      "skills": [
+        "ExpressJS"
+      ]
+    },
+    {
+      "id": "1748970105830",
+      "name": "DevPremier CRM",
+      "description": "DevPremier CRM is a complete and to-the-point solution to help in converting Leads into Customers. ",
+      "link": "https://devpremier.com/",
+      "skills": [
+        "Laravel",
+        "MySQL",
+        "VueJS"
+      ]
+    },
+    {
+      "id": "1762081782809",
+      "name": "Notexa Mobile App (Personal Asssitant)",
+      "description": "Your private, AI-ready productivity + personal assistant with prescription management and medicine reminders. From development to deployment.",
+      "link": "https://app.notexa.codesips.com/",
+      "skills": [
+        "Flutter",
+        "Fast API (Python)",
+        "MySQL"
+      ]
+    },
+    {
+      "id": "1766570655451",
+      "name": "FastAPI based Laravel like boilerplate (Open Source)",
+      "description": "This boilerplate is designed for developers who love Laravel's elegant syntax, clear structure, and powerful CLI, but want to build their next high-performance microservice or AI platform using Python.",
+      "link": "https://gargashwani.github.io/fastapi_boilerplate/index.html",
+      "skills": [
+        "FastAPI",
+        "AI-driven"
+      ]
+    }
+  ]
+}
