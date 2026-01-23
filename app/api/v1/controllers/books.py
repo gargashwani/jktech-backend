@@ -1,7 +1,3 @@
-"""
-Book Management API Controller
-"""
-
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,10 +32,8 @@ async def create_book(
     book_in: BookCreate,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Create a new book."""
     try:
-        logger.info(f"Creating book: {book_in.model_dump()}")
-        # Create book
+        logger.info(f"Creating book: {book_in.title}")
         book = await Book.create(
             db,
             title=book_in.title,
@@ -49,15 +43,13 @@ async def create_book(
             summary=book_in.summary,
         )
 
-        # Generate summary if content provided but no summary
+        # Try to generate summary if we have content
         if not book.summary and book_in.summary:
             try:
-                generated_summary = await openrouter_service.generate_summary(
-                    book_in.summary
-                )
-                book = await Book.update(db, book, summary=generated_summary)
+                summary = await openrouter_service.generate_summary(book_in.summary)
+                book = await Book.update(db, book, summary=summary)
             except Exception as e:
-                logger.warning(f"Failed to generate summary: {e}")
+                logger.warning(f"Couldn't generate summary: {e}")
 
         return book
     except Exception as e:

@@ -1,7 +1,3 @@
-"""
-Book Model
-"""
-
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
@@ -11,12 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database_async import AsyncBase
 
-# Import User for relationship resolution - needed for SQLAlchemy to resolve string reference
-# This import happens at runtime to ensure User is in the registry when Review is initialized
+# Import User for relationship resolution
 try:
     from app.models.user import User  # noqa: F401
 except ImportError:
-    # User might not be imported yet, but SQLAlchemy will resolve it via string reference
     pass
 
 
@@ -36,7 +30,6 @@ class Book(AsyncBase):
         onupdate=lambda: datetime.utcnow(),
     )
 
-    # Relationships
     reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
 
     @classmethod

@@ -1,7 +1,3 @@
-"""
-Document Management API Controller
-"""
-
 import os
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
@@ -25,43 +21,24 @@ router = APIRouter()
 
 
 def get_storage_path(filename: str) -> str:
-    """Get storage path for uploaded file."""
     storage_dir = os.path.join(settings.FILESYSTEM_ROOT, "documents")
     os.makedirs(storage_dir, exist_ok=True)
     return os.path.join(storage_dir, filename)
 
 
 async def extract_text_from_file(file_path: str, mime_type: str) -> str:
-    """Extract text content from file."""
     try:
         if mime_type.startswith("text/"):
             with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                logger.debug(
-                    f"Extracted text from file",
-                    context={"file_path": file_path, "content_length": len(content)},
-                )
-                return content
+                return f.read()
         elif mime_type == "application/pdf":
-            # For PDF, you'd use PyPDF2 or similar
-            # For now, return placeholder
-            logger.warning(
-                "PDF extraction not implemented, using placeholder",
-                context={"file_path": file_path},
-            )
-            return "PDF content extraction not implemented. Please use text files."
+            logger.warning("PDF not supported yet", context={"file_path": file_path})
+            return "PDF extraction not implemented. Please use text files."
         else:
-            logger.warning(
-                f"Unsupported file type: {mime_type}",
-                context={"file_path": file_path, "mime_type": mime_type},
-            )
+            logger.warning(f"Unsupported file type: {mime_type}")
             return f"Content extraction not supported for {mime_type}"
     except Exception as e:
-        logger.exception(
-            "Error extracting text from file",
-            e,
-            context={"file_path": file_path, "mime_type": mime_type},
-        )
+        logger.exception("Error extracting text", e, context={"file_path": file_path})
         return ""
 
 
@@ -72,40 +49,19 @@ async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Upload a document. Only .txt files are allowed."""
     try:
-        # Validate file extension - only .txt files allowed
         if not file.filename:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Filename is required",
-            )
+            raise HTTPException(status_code=400, detail="Filename is required")
         
-        filename_lower = file.filename.lower()
-        if not filename_lower.endswith('.txt'):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only .txt files are allowed. Please upload a text file.",
-            )
+        if not file.filename.lower().endswith('.txt'):
+            raise HTTPException(status_code=400, detail="Only .txt files are allowed")
         
-        # Validate MIME type (optional check, but helpful)
-        if file.content_type and file.content_type not in ['text/plain', 'text/plain; charset=utf-8']:
-            logger.warning(
-                f"Unexpected MIME type for .txt file: {file.content_type}",
-                context={"filename": file.filename},
-            )
-            # Don't reject based on MIME type alone, as it can be unreliable
-        
-        # Save file
         file_path = get_storage_path(file.filename)
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
 
-        # Extract text content
         text_content = await extract_text_from_file(file_path, file.content_type or "")
-
-        # Create document record
         document = await Document.create(
             db,
             filename=file.filename,

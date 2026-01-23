@@ -24,22 +24,19 @@ logger = get_logger("auth")
 def login(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    """
-    OAuth2 compatible token login, get an access token and user information for future requests
-    """
     try:
-        logger.info(f"Login attempt for email: {form_data.username}")
+        logger.info(f"Login attempt: {form_data.username}")
         user = User.authenticate(db, email=form_data.username, password=form_data.password)
         if not user:
-            logger.warning(f"Failed login attempt for email: {form_data.username}")
+            logger.warning(f"Failed login: {form_data.username}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=401,
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        access_token_expires = timedelta(minutes=settings.JWT_EXPIRATION)
-        token = security.create_access_token(user.id, expires_delta=access_token_expires)
-        logger.info(f"Successful login for user: {user.id} ({user.email})")
+        expires = timedelta(minutes=settings.JWT_EXPIRATION)
+        token = security.create_access_token(user.id, expires_delta=expires)
+        logger.info(f"Login successful: {user.email}")
         return {
             "access_token": token,
             "token_type": "bearer",
@@ -61,45 +58,27 @@ def register(
     db: Session = Depends(get_db),
     user_in: UserCreate,
 ) -> Any:
-    """
-    Create new user.
-    Returns user information only. Use /login endpoint to get authorization token.
-    """
     try:
-        logger.info(f"Registration attempt for email: {user_in.email}")
-        user = User.get_by_email(db, email=user_in.email)
-        if user:
-            logger.warning(f"Registration failed: email already exists: {user_in.email}")
-            raise HTTPException(
-                status_code=400,
-                detail="The user with this email already exists in the system.",
-            )
+        logger.info(f"Registration: {user_in.email}")
+        existing = User.get_by_email(db, email=user_in.email)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already exists")
         
         user = User.create(db, obj_in=user_in)
-        logger.info(f"User registered successfully: {user.id} ({user.email})")
+        logger.info(f"User registered: {user.email}")
 
-        # Queue background tasks (optional - don't fail if Celery is not running)
+        # Try to queue background tasks (don't fail if Celery is down)
         try:
             send_welcome_email.delay(user.id)
             process_user_data.delay(user.id)
-            logger.debug(f"Background tasks queued for user: {user.id}")
         except Exception as e:
-            # Log but don't fail registration if Celery is not available
-            logger.warning(
-                f"Could not queue background tasks for user {user.id}",
-                context={"error": str(e)},
-            )
+            logger.warning(f"Couldn't queue tasks: {e}")
 
-        # Example: Broadcast user created event (optional)
+        # Try to broadcast event
         try:
-            event = UserCreated(user)
-            broadcast().event(event)
-            logger.debug(f"User created event broadcasted for user: {user.id}")
+            broadcast().event(UserCreated(user))
         except Exception as e:
-            logger.warning(
-                f"Could not broadcast event for user {user.id}",
-                context={"error": str(e)},
-            )
+            logger.warning(f"Couldn't broadcast: {e}")
 
         return user
     except HTTPException:
