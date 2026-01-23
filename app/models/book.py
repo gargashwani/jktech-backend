@@ -34,23 +34,18 @@ class Book(AsyncBase):
 
     @classmethod
     async def get(cls, db: AsyncSession, id: int) -> Optional["Book"]:
-        """Get a book by ID."""
         from sqlalchemy import select
         result = await db.execute(select(cls).filter(cls.id == id))
         return result.scalar_one_or_none()
 
     @classmethod
-    async def get_all(
-        cls, db: AsyncSession, skip: int = 0, limit: int = 100
-    ) -> list["Book"]:
-        """Get all books with pagination."""
+    async def get_all(cls, db: AsyncSession, skip: int = 0, limit: int = 100) -> list["Book"]:
         from sqlalchemy import select
         result = await db.execute(select(cls).offset(skip).limit(limit))
         return list(result.scalars().all())
 
     @classmethod
     async def create(cls, db: AsyncSession, **kwargs) -> "Book":
-        """Create a new book."""
         db_obj = cls(**kwargs)
         db.add(db_obj)
         await db.flush()  # Flush to get the ID without committing

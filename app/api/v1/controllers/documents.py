@@ -193,19 +193,14 @@ async def trigger_ingestion(
     document_id: int,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Trigger ingestion for a document."""
     document = await Document.get(db, id=document_id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Check if already processing
-    existing_ingestion = await Ingestion.get_by_document(db, document_id)
-    if existing_ingestion and existing_ingestion.status == IngestionStatus.PROCESSING:
-        raise HTTPException(
-            status_code=400, detail="Document is already being processed"
-        )
+    existing = await Ingestion.get_by_document(db, document_id)
+    if existing and existing.status == IngestionStatus.PROCESSING:
+        raise HTTPException(status_code=400, detail="Already processing")
 
-    # Create ingestion record
     from datetime import datetime
     ingestion = await Ingestion.create(
         db,
@@ -215,43 +210,24 @@ async def trigger_ingestion(
         started_at=datetime.utcnow(),
     )
 
-    # Update document status
-    await Document.update(
-        db, document, ingestion_status=IngestionStatus.PROCESSING
-    )
+    await Document.update(db, document, ingestion_status=IngestionStatus.PROCESSING)
 
-    # Process ingestion asynchronously (in production, use Celery)
     try:
-        if document.content:
-            logger.info(
-                f"Starting ingestion for document {document_id}",
-                context={"filename": document.filename, "content_length": len(document.content)},
-            )
-            # Add to vector store
-            rag_service.add_document(
-                document_id=document_id,
-                content=document.content,
-                metadata={
-                    "filename": document.filename,
-                    "uploaded_by": str(document.uploaded_by),
-                },
-            )
+        if not document.content:
+            raise ValueError("No content to ingest")
 
-            # Update ingestion status
-            ingestion = await Ingestion.update(
-                db,
-                ingestion,
-                status=IngestionStatus.COMPLETED,
-                progress=100,
-                completed_at=datetime.utcnow(),
-            )
+        logger.info(f"Starting ingestion: {document.filename}")
+        rag_service.add_document(
+            document_id=document_id,
+            content=document.content,
+            metadata={"filename": document.filename, "uploaded_by": str(document.uploaded_by)},
+        )
 
-            await Document.update(
-                db, document, ingestion_status=IngestionStatus.COMPLETED
-            )
-            logger.info(f"Ingestion completed for document {document_id}")
-        else:
-            raise ValueError("Document has no content to ingest")
+        ingestion = await Ingestion.update(
+            db, ingestion, status=IngestionStatus.COMPLETED, progress=100, completed_at=datetime.utcnow()
+        )
+        await Document.update(db, document, ingestion_status=IngestionStatus.COMPLETED)
+        logger.info(f"Ingestion done: {document_id}")
     except Exception as e:
         logger.exception(
             "Error during ingestion",

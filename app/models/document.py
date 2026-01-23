@@ -1,7 +1,3 @@
-"""
-Document Model for RAG System
-"""
-
 from datetime import datetime
 from typing import Optional
 
@@ -13,7 +9,6 @@ from app.core.database_async import AsyncBase
 
 
 class IngestionStatus(str, enum.Enum):
-    """Ingestion status enum."""
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -46,20 +41,14 @@ class Document(AsyncBase):
 
     @classmethod
     async def get(cls, db: AsyncSession, id: int) -> Optional["Document"]:
-        """Get a document by ID."""
         from sqlalchemy import select
         result = await db.execute(select(cls).filter(cls.id == id))
         return result.scalar_one_or_none()
 
     @classmethod
     async def get_all(
-        cls,
-        db: AsyncSession,
-        skip: int = 0,
-        limit: int = 100,
-        status: Optional[IngestionStatus] = None,
+        cls, db: AsyncSession, skip: int = 0, limit: int = 100, status: Optional[IngestionStatus] = None
     ) -> list["Document"]:
-        """Get all documents with optional status filter."""
         from sqlalchemy import select
         query = select(cls)
         if status:
@@ -69,7 +58,6 @@ class Document(AsyncBase):
 
     @classmethod
     async def create(cls, db: AsyncSession, **kwargs) -> "Document":
-        """Create a new document."""
         db_obj = cls(**kwargs)
         db.add(db_obj)
         await db.flush()  # Flush to get the ID without committing
