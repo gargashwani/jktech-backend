@@ -44,46 +44,111 @@ except Exception as e:
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors (422) with detailed logging."""
+    import json
+    
     try:
-        body = await request.body()
-        body_str = body.decode('utf-8') if body else None
-    except Exception:
-        body_str = None
-    
-    # Get validation errors and ensure they're serializable
-    errors = exc.errors()
-    
-    logger.error(
-        f"Validation error on {request.method} {request.url.path}",
-        context={
-            "errors": errors,
-            "body": body_str,
-            "method": request.method,
-            "url": str(request.url),
-        },
-    )
-    
-    # Build response content - ensure all values are JSON serializable
-    response_content = {"detail": errors}
-    
-    # Only include body if it's serializable
-    if hasattr(exc, 'body') and exc.body is not None:
+        # Try to get request body for logging
         try:
-            # Try to serialize the body to check if it's valid
-            import json
-            json.dumps(exc.body)
-            response_content["body"] = exc.body
-        except (TypeError, ValueError):
-            # If body is not serializable, convert to string or skip
-            try:
-                response_content["body"] = str(exc.body)
-            except Exception:
-                pass  # Skip body if we can't convert it
-    
-    return JSONResponse(
-        status_code=422,
-        content=response_content,
-    )
+            body = await request.body()
+            body_str = body.decode('utf-8') if body else None
+        except Exception:
+            body_str = None
+        
+        # Get validation errors and ensure they're serializable
+        errors = exc.errors()
+        
+        # Clean errors to ensure all values are JSON serializable
+        def make_serializable(obj):
+            """Recursively convert non-serializable objects to strings."""
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(item) for item in obj]
+            elif isinstance(obj, (str, int, float, bool, type(None))):
+                return obj
+            else:
+                # Convert any other type to string
+                try:
+                    return str(obj)
+                except Exception:
+                    return None
+        
+        # Clean errors for logging (may contain non-serializable objects)
+        errors_for_logging = make_serializable(errors)
+        
+        logger.error(
+            f"Validation error on {request.method} {request.url.path}",
+            context={
+                "errors": errors_for_logging,
+                "body": body_str,
+                "method": request.method,
+                "url": str(request.url),
+            },
+        )
+        
+        # Clean errors for response (ensure JSON serializable)
+        cleaned_errors = make_serializable(errors)
+        
+        # Build response content - ensure all values are JSON serializable
+        response_content = {"detail": cleaned_errors}
+        
+        # Verify response is serializable before returning
+        try:
+            json.dumps(response_content)
+        except (TypeError, ValueError) as e:
+            # If still not serializable, create a safe fallback response
+            logger.warning(
+                f"Could not serialize validation errors, using fallback",
+                context={"error": str(e)},
+            )
+            response_content = {
+                "detail": [
+                    {
+                        "type": error.get("type", "validation_error"),
+                        "loc": error.get("loc", []),
+                        "msg": str(error.get("msg", "Validation error")),
+                        "input": str(error.get("input", "")) if error.get("input") is not None else None,
+                    }
+                    for error in errors
+                ]
+            }
+        
+        return JSONResponse(
+            status_code=422,
+            content=response_content,
+        )
+    except Exception as handler_error:
+        # If the validation error handler itself fails, log and return a safe response
+        logger.exception(
+            "Error in validation exception handler",
+            handler_error,
+            context={
+                "method": request.method,
+                "url": str(request.url),
+            },
+        )
+        # Return a basic 422 response with the original errors
+        try:
+            errors = exc.errors()
+            # Create minimal safe response
+            safe_errors = [
+                {
+                    "type": error.get("type", "validation_error"),
+                    "loc": list(error.get("loc", [])),
+                    "msg": str(error.get("msg", "Validation error")),
+                }
+                for error in errors
+            ]
+            return JSONResponse(
+                status_code=422,
+                content={"detail": safe_errors},
+            )
+        except Exception:
+            # Last resort: return generic validation error
+            return JSONResponse(
+                status_code=422,
+                content={"detail": "Validation error"},
+            )
 
 # Add global exception handler
 @app.exception_handler(Exception)
