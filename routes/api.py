@@ -1,8 +1,3 @@
-"""
-API Routes
-Define API routes here, similar to Laravel's routes/api.php
-"""
-
 from fastapi import APIRouter
 
 from app.api.v1.controllers import (
@@ -17,13 +12,6 @@ from app.api.v1.controllers import (
 
 
 def register_api_routes() -> APIRouter:
-    """
-    Register all API routes.
-    Similar to Laravel's routes/api.php
-    Returns the API router with all routes included.
-
-    Note: All routes except /auth/* require authentication by default.
-    """
     api_router = APIRouter()
 
     # Authentication routes (NO authentication required)
