@@ -48,8 +48,6 @@ ENV/
 *.sqlite
 *.sqlite3
 
-# ChromaDB
-chroma_db/
 
 # OS
 .DS_Store
