@@ -194,6 +194,7 @@ async def trigger_ingestion(
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
     document = await Document.get(db, id=document_id)
+
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

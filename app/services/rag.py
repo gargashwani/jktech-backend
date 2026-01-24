@@ -84,7 +84,10 @@ class RAGService:
             # Get or create collection
             self.collection = self.chroma_client.get_or_create_collection(
                 name="documents",
-                metadata={"hnsw:space": "cosine"},
+                metadata={
+                    "hnsw:space": "cosine",
+                    "ef_construction": 200
+                },
             )
             logger.info("RAG service initialized successfully")
         except Exception as e:
