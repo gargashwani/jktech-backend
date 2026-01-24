@@ -11,7 +11,6 @@ from app.core.logging import get_logger
 from app.core.security_async import get_current_active_user_async
 from app.models.user import User
 from app.schemas.document import QARequest, QAResponse
-from app.services.openrouter import openrouter_service
 from app.services.rag import rag_service
 
 logger = get_logger("qa")
@@ -65,21 +64,9 @@ async def ask_question(
 
         context = "\n\n".join(context_parts)
 
-        # Generate answer using OpenRouter
-        try:
-            answer = await openrouter_service.answer_question(
-                question=request.question, context=context
-            )
-        except Exception as e:
-            logger.error(
-                f"Failed to generate answer: {e}",
-                context={"question": request.question, "sources_count": len(sources)},
-            )
-            # Return a helpful message with the sources found
-            answer = (
-                "I found relevant information in the documents, but I'm unable to generate a complete answer "
-                "at the moment. Please review the sources below for relevant information."
-            )
+        # Simple local answer: return the most relevant excerpts from the documents
+        answer_intro = "Here are the most relevant excerpts from your documents:\n\n"
+        answer = answer_intro + context
 
         # Calculate confidence based on search distances (lower is better)
         if search_results and search_results[0].get("distance") is not None:

@@ -17,7 +17,6 @@ from app.schemas.book import (
     BookRecommendationRequest,
     BookRecommendationResponse,
 )
-from app.services.openrouter import openrouter_service
 from app.services.recommendation import recommendation_service
 
 logger = get_logger("books")
@@ -43,14 +42,7 @@ async def create_book(
             summary=book_in.summary,
         )
 
-        # Try to generate summary if we have content
-        if not book.summary and book_in.summary:
-            try:
-                summary = await openrouter_service.generate_summary(book_in.summary)
-                book = await Book.update(db, book, summary=summary)
-            except Exception as e:
-                logger.warning(f"Couldn't generate summary: {e}")
-
+        # No external AI call here; summary stays as provided in the request
         return book
     except Exception as e:
         logger.exception(
@@ -209,13 +201,13 @@ async def get_book_summary(
     reviews = await Review.get_by_book(db, book_id=book_id)
     average_rating = await Review.get_average_rating(db, book_id=book_id)
 
-    # Generate review summary using AI
+    # Simple local summary based only on ratings (no external AI)
     review_summary = None
-    if reviews:
-        review_data = [
-            {"rating": r.rating, "review_text": r.review_text} for r in reviews
-        ]
-        review_summary = await openrouter_service.generate_review_summary(review_data)
+    if reviews and average_rating is not None:
+        review_summary = (
+            f"Average rating: {average_rating:.1f}/5 "
+            f"based on {len(reviews)} review(s)."
+        )
 
     return BookSummaryResponse(
         book=book,
@@ -231,12 +223,15 @@ async def generate_summary(
     content: str,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Generate a summary for given book content."""
+    """Generate a very simple local summary for given book content (no external AI)."""
     if not content or not content.strip():
         raise HTTPException(status_code=400, detail="Content is required")
 
-    summary = await openrouter_service.generate_summary(content)
-    return {"summary": summary}
+    text = content.strip()
+    max_len = 200
+    if len(text) > max_len:
+        text = text[:max_len] + "..."
+    return {"summary": text}
 
 
 @router.post("/recommendations", response_model=BookRecommendationResponse)
