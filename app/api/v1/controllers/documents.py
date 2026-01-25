@@ -27,19 +27,15 @@ def get_storage_path(filename: str) -> str:
 
 
 async def extract_text_from_file(file_path: str, mime_type: str) -> str:
-    try:
-        if mime_type.startswith("text/"):
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        elif mime_type == "application/pdf":
-            logger.warning("PDF not supported yet", context={"file_path": file_path})
-            return "PDF extraction not implemented. Please use text files."
-        else:
-            logger.warning(f"Unsupported file type: {mime_type}")
-            return f"Content extraction not supported for {mime_type}"
-    except Exception as e:
-        logger.exception("Error extracting text", e, context={"file_path": file_path})
-        return ""
+    if mime_type.startswith("text/"):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    elif mime_type == "application/pdf":
+        logger.warning("PDF not supported yet", context={"file_path": file_path})
+        return "PDF extraction not implemented. Please use text files."
+    else:
+        logger.warning(f"Unsupported file type: {mime_type}")
+        return f"Content extraction not supported for {mime_type}"
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
@@ -49,45 +45,30 @@ async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    try:
-        if not file.filename:
-            raise HTTPException(status_code=400, detail="Filename is required")
-        
-        if not file.filename.lower().endswith('.txt'):
-            raise HTTPException(status_code=400, detail="Only .txt files are allowed")
-        
-        file_path = get_storage_path(file.filename)
-        content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    
+    if not file.filename.lower().endswith('.txt'):
+        raise HTTPException(status_code=400, detail="Only .txt files are allowed")
+    
+    file_path = get_storage_path(file.filename)
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
 
-        text_content = await extract_text_from_file(file_path, file.content_type or "")
-        document = await Document.create(
-            db,
-            filename=file.filename,
-            file_path=file_path,
-            file_size=len(content),
-            mime_type=file.content_type,
-            content=text_content,
-            ingestion_status=IngestionStatus.PENDING,
-            uploaded_by=current_user.id,
-        )
+    text_content = await extract_text_from_file(file_path, file.content_type or "")
+    document = await Document.create(
+        db,
+        filename=file.filename,
+        file_path=file_path,
+        file_size=len(content),
+        mime_type=file.content_type,
+        content=text_content,
+        ingestion_status=IngestionStatus.PENDING,
+        uploaded_by=current_user.id,
+    )
 
-        return document
-    except Exception as e:
-        logger.exception(
-            "Error uploading document",
-            e,
-            context={
-                "user_id": current_user.id,
-                "filename": file.filename,
-                "file_size": len(content) if 'content' in locals() else 0,
-            },
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload document",
-        )
+    return document
 
 
 @router.get("", response_model=List[DocumentResponse])
@@ -99,16 +80,8 @@ async def get_documents(
     status: IngestionStatus = None,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Get all documents."""
-    try:
-        documents = await Document.get_all(db, skip=skip, limit=limit, status=status)
-        return documents
-    except Exception as e:
-        logger.error(f"Error fetching documents: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch documents",
-        )
+    documents = await Document.get_all(db, skip=skip, limit=limit, status=status)
+    return documents
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
@@ -118,7 +91,6 @@ async def get_document(
     document_id: int,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Get a specific document by ID."""
     document = await Document.get(db, id=document_id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -132,58 +104,29 @@ async def delete_document(
     document_id: int,
     current_user: User = Depends(get_current_active_user_async),
 ):
-    """Delete a document."""
-    try:
-        document = await Document.get(db, id=document_id)
-        if not document:
-            raise HTTPException(status_code=404, detail="Document not found")
+    document = await Document.get(db, id=document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
 
-        # Check ownership or admin
-        if document.uploaded_by != current_user.id and not current_user.is_superuser:
-            logger.warning(
-                f"Unauthorized delete attempt for document {document_id}",
-                context={"user_id": current_user.id, "document_owner": document.uploaded_by},
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to delete this document",
-            )
-
-        # Delete from vector store
-        try:
-            rag_service.delete_document(document_id)
-            logger.debug(f"Document {document_id} deleted from vector store")
-        except Exception as e:
-            logger.warning(
-                f"Error deleting document from vector store",
-                context={"document_id": document_id, "error": str(e)},
-            )
-
-        # Delete file
-        try:
-            if os.path.exists(document.file_path):
-                os.remove(document.file_path)
-                logger.debug(f"File deleted: {document.file_path}")
-        except Exception as e:
-            logger.warning(
-                f"Error deleting file",
-                context={"file_path": document.file_path, "error": str(e)},
-            )
-
-        await Document.delete(db, document)
-        logger.info(f"Document {document_id} deleted by user {current_user.id}")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception(
-            "Error deleting document",
-            e,
-            context={"document_id": document_id, "user_id": current_user.id},
+    if document.uploaded_by != current_user.id and not current_user.is_superuser:
+        logger.warning(
+            f"Unauthorized delete attempt for document {document_id}",
+            context={"user_id": current_user.id, "document_owner": document.uploaded_by},
         )
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete document",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this document",
         )
+
+    rag_service.delete_document(document_id)
+    logger.debug(f"Document {document_id} deleted from vector store")
+
+    if os.path.exists(document.file_path):
+        os.remove(document.file_path)
+        logger.debug(f"File deleted: {document.file_path}")
+
+    await Document.delete(db, document)
+    logger.info(f"Document {document_id} deleted by user {current_user.id}")
 
 
 @router.post("/{document_id}/ingest", response_model=IngestionResponse, status_code=status.HTTP_201_CREATED)
@@ -213,37 +156,21 @@ async def trigger_ingestion(
 
     await Document.update(db, document, ingestion_status=IngestionStatus.PROCESSING)
 
-    try:
-        if not document.content:
-            raise ValueError("No content to ingest")
+    if not document.content:
+        raise ValueError("No content to ingest")
 
-        logger.info(f"Starting ingestion: {document.filename}")
-        rag_service.add_document(
-            document_id=document_id,
-            content=document.content,
-            metadata={"filename": document.filename, "uploaded_by": str(document.uploaded_by)},
-        )
+    logger.info(f"Starting ingestion: {document.filename}")
+    rag_service.add_document(
+        document_id=document_id,
+        content=document.content,
+        metadata={"filename": document.filename, "uploaded_by": str(document.uploaded_by)},
+    )
 
-        ingestion = await Ingestion.update(
-            db, ingestion, status=IngestionStatus.COMPLETED, progress=100, completed_at=datetime.utcnow()
-        )
-        await Document.update(db, document, ingestion_status=IngestionStatus.COMPLETED)
-        logger.info(f"Ingestion done: {document_id}")
-    except Exception as e:
-        logger.exception(
-            "Error during ingestion",
-            e,
-            context={"document_id": document_id, "filename": document.filename},
-        )
-        ingestion = await Ingestion.update(
-            db,
-            ingestion,
-            status=IngestionStatus.FAILED,
-            error_message=str(e),
-        )
-        await Document.update(
-            db, document, ingestion_status=IngestionStatus.FAILED, ingestion_error=str(e)
-        )
+    ingestion = await Ingestion.update(
+        db, ingestion, status=IngestionStatus.COMPLETED, progress=100, completed_at=datetime.utcnow()
+    )
+    await Document.update(db, document, ingestion_status=IngestionStatus.COMPLETED)
+    logger.info(f"Ingestion done: {document_id}")
 
     return ingestion
 
@@ -257,16 +184,8 @@ async def get_ingestions(
     status: IngestionStatus = None,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Get all ingestions."""
-    try:
-        ingestions = await Ingestion.get_all(db, skip=skip, limit=limit, status=status)
-        return ingestions
-    except Exception as e:
-        logger.error(f"Error fetching ingestions: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch ingestions",
-        )
+    ingestions = await Ingestion.get_all(db, skip=skip, limit=limit, status=status)
+    return ingestions
 
 
 @router.get("/ingestions/{ingestion_id}", response_model=IngestionResponse)
@@ -276,7 +195,6 @@ async def get_ingestion(
     ingestion_id: int,
     current_user: User = Depends(get_current_active_user_async),
 ) -> Any:
-    """Get a specific ingestion by ID."""
     ingestion = await Ingestion.get(db, id=ingestion_id)
     if not ingestion:
         raise HTTPException(status_code=404, detail="Ingestion not found")
